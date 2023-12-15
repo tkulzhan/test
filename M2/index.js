@@ -17,20 +17,32 @@ const createConnection = async () => {
     throw error;
   }
 };
-var connection = await createConnection();
+const connection = await createConnection();
 
 const createChannel = async () => {
   try {
-    const senderChannel = await connection.createChannel();
+    const channel = await connection.createChannel();
     console.log("Channel created");
-    return senderChannel;
+    return channel;
   } catch (error) {
     console.error("Error creating channel:", error.message);
     throw error;
   }
 };
-var senderChannel = await createChannel();
-var consumerChannel = await createChannel();
+const senderChannel = await createChannel();
+const consumerChannel = await createChannel();
+
+consumerChannel.assertQueue(request_queue, { durable: true });
+senderChannel.assertQueue(response_queue, { durable: true });
+
+consumerChannel.consume(request_queue, (msg) => {
+  const inputNum = JSON.parse(msg.content.toString());
+  const num = inputNum * 2;
+  setTimeout(() => {
+    senderChannel.sendToQueue(response_queue, Buffer.from(JSON.stringify(num)));
+    consumerChannel.ack(msg);
+  }, 5000);
+});
 
 const server = http.createServer(async (req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
@@ -38,15 +50,6 @@ const server = http.createServer(async (req, res) => {
   res.end();
 });
 
-await consumerChannel.assertQueue(request_queue, { durable: true });
-await senderChannel.assertQueue(response_queue, { durable: true });
-consumerChannel.consume(request_queue, (msg) => {
-  const inputNum = JSON.parse(msg.content.toString());
-  const num = inputNum * 2;
-  consumerChannel.ack(msg);
-  senderChannel.sendToQueue(response_queue, Buffer.from(JSON.stringify(num)));
-});
-
 server.listen(PORT, () => {
-  console.log(`Server M1 started at http://localhost:${PORT}`);
+  console.log(`Server M2 started at http://localhost:${PORT}`);
 });

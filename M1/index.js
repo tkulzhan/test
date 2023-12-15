@@ -17,58 +17,72 @@ const createConnection = async () => {
     throw error;
   }
 };
-var connection = await createConnection();
 
-const createChannel = async () => {
+const createChannel = async (connection) => {
   try {
-    const senderChannel = await connection.createChannel();
+    const channel = await connection.createChannel();
     console.log("Channel created");
-    return senderChannel;
+    return channel;
   } catch (error) {
     console.error("Error creating channel:", error.message);
     throw error;
   }
 };
-var senderChannel = await createChannel();
-var consumerChannel = await createChannel();
 
-const server = http.createServer(async (req, res) => {
-  if (req.method === "POST") {
-    let num = 0;
-    req.on("data", (chunk) => {
-      num += JSON.parse(chunk);
-    });
-    req.on("end", async () => {
-      try {
-        await senderChannel.assertQueue(request_queue, { durable: true });
-        senderChannel.sendToQueue(
-          request_queue,
-          Buffer.from(JSON.stringify(num))
-        );
-        res.writeHead(200);
-        res.end();
-      } catch (error) {
-        console.error(error);
-        res.writeHead(500, { "Content-Type": "text/plain" });
-        res.write("Internal Server Error");
-        res.end();
-      }
-    });
-  } else {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.write("Server M1 is running");
-    res.end();
-  }
-});
+const waitResult = (channel, callback) => {
+  channel.assertQueue(response_queue, { durable: true });
+  channel.consume(response_queue, (response) => {
+    const numBuffer = response.content;
+    channel.ack(response);
+    const num = numBuffer.toString();
+    callback(num);
+  });
+};
 
-await consumerChannel.assertQueue(response_queue, { durable: true });
-consumerChannel.consume(response_queue, (response) => {
-  const numBuffer = response.content;
-  consumerChannel.ack(response);
-  const num = numBuffer.toString();
-  console.log(num);
-});
+const setupM1Server = async () => {
+  const connection = await createConnection();
+  const senderChannel = await createChannel(connection);
+  const consumerChannel = await createChannel(connection);
 
-server.listen(PORT, () => {
-  console.log(`Server M1 started at http://localhost:${PORT}`);
-});
+  consumerChannel.assertQueue(request_queue, { durable: true });
+  senderChannel.assertQueue(response_queue, { durable: true });
+
+  const server = http.createServer(async (req, res) => {
+    if (req.method === "POST") {
+      let num = 0;
+      req.on("data", (chunk) => {
+        num += JSON.parse(chunk);
+      });
+      req.on("end", async () => {
+        try {
+          senderChannel.assertQueue(request_queue, { durable: true });
+          senderChannel.sendToQueue(
+            request_queue,
+            Buffer.from(JSON.stringify(num))
+          );
+
+          waitResult(consumerChannel, (result) => {
+            res.writeHead(200, { "Content-Type": "text/plain" });
+            res.write(`Request processed. Result: ${result}`);
+            res.end();
+          });
+        } catch (error) {
+          console.error(error);
+          res.writeHead(500, { "Content-Type": "text/plain" });
+          res.write("Internal Server Error");
+          res.end();
+        }
+      });
+    } else {
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.write("Server M1 is running");
+      res.end();
+    }
+  });
+
+  server.listen(PORT, () => {
+    console.log(`Server M1 started at http://localhost:${PORT}`);
+  });
+};
+
+setupM1Server();
