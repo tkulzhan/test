@@ -77,8 +77,7 @@ const start = async () => {
           // Вернуть ответ
           waitResult(consumerChannel, (result) => {
             res.writeHead(200, { "Content-Type": "text/plain" });
-            res.write(`${result}`);
-            res.end();
+            res.end(`${result}`);
           });
         } catch (error) {
           error(error);
@@ -89,8 +88,7 @@ const start = async () => {
       });
     } else {
       res.writeHead(200, { "Content-Type": "text/plain" });
-      res.write("Server M1 is running");
-      res.end();
+      res.end("Server M1 is running");
     }
   });
 

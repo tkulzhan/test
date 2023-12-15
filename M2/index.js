@@ -59,8 +59,7 @@ consumerChannel.consume(request_queue, (msg) => {
 
 const server = http.createServer(async (req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
-  res.write("Server M2 is running");
-  res.end();
+  res.end("Server M2 is running");
 });
 
 server.listen(PORT, () => {
