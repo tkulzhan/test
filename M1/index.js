@@ -3,12 +3,13 @@ import amqp from "amqplib";
 import fs from "fs";
 
 const PORT = 5000;
-const request_queue = "request_queue";
-const response_queue = "response_queue";
+const request_queue = "request_queue"; // Очередь для входящих чисел
+const response_queue = "response_queue"; // Очередь для обработанных чисел
 const logFile = "log.txt";
 const amqp_url =
   "amqps://mombwlwf:ST-l0O31nJnPfzAyuYc1iVyvV0Ns510y@cow.rmq2.cloudamqp.com/mombwlwf";
 
+// Логирование
 const log = (message) => {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}\n`;
@@ -38,6 +39,7 @@ const createChannel = async (connection) => {
   }
 };
 
+// Ожидание обработки запроса и передача результата в callback, который выдает ответ на запрос 
 const waitResult = (channel, callback) => {
   channel.assertQueue(response_queue, { durable: true });
   channel.consume(response_queue, (response) => {
@@ -49,6 +51,7 @@ const waitResult = (channel, callback) => {
 };
 
 const start = async () => {
+  // Соединение, каналы для принятия и отправки сообщений
   const connection = await createConnection();
   const senderChannel = await createChannel(connection);
   const consumerChannel = await createChannel(connection);
@@ -58,10 +61,12 @@ const start = async () => {
 
   const server = http.createServer(async (req, res) => {
     if (req.method === "POST") {
+      // Чтение тела запроса который является числом в виде простого текста
       let num = 0;
       req.on("data", (chunk) => {
         num += JSON.parse(chunk);
       });
+      // По окончанию запроса отправить сообщение в "request_queue"
       req.on("end", async () => {
         try {
           senderChannel.assertQueue(request_queue, { durable: true });
@@ -69,7 +74,7 @@ const start = async () => {
             request_queue,
             Buffer.from(JSON.stringify(num))
           );
-
+          // Вернуть ответ
           waitResult(consumerChannel, (result) => {
             res.writeHead(200, { "Content-Type": "text/plain" });
             res.write(`${result}`);

@@ -26,6 +26,7 @@ const createConnection = async () => {
     throw error;
   }
 };
+// Соединение с RabbitMQ
 const connection = await createConnection();
 
 const createChannel = async () => {
@@ -38,15 +39,18 @@ const createChannel = async () => {
     throw error;
   }
 };
+// Каналы для принятия и отправки сообщений
 const senderChannel = await createChannel();
 const consumerChannel = await createChannel();
 
 consumerChannel.assertQueue(request_queue, { durable: true });
 senderChannel.assertQueue(response_queue, { durable: true });
 
+// Принимать сообщения из очереди "request_queue" и ...
 consumerChannel.consume(request_queue, (msg) => {
   const inputNum = JSON.parse(msg.content.toString());
   const num = inputNum * 2;
+  // Отправлять сообщеник в response_queue после симуляции задержки и обработки задания
   setTimeout(() => {
     senderChannel.sendToQueue(response_queue, Buffer.from(JSON.stringify(num)));
     consumerChannel.ack(msg);
