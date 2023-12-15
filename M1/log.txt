@@ -1,0 +1,4 @@
+[2023-12-15T12:37:09.428Z] Connected to RabbitMQ
+[2023-12-15T12:37:09.826Z] Channel created
+[2023-12-15T12:37:10.067Z] Channel created
+[2023-12-15T12:37:10.072Z] Server M1 started at http://localhost:5000

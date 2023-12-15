@@ -1,19 +1,28 @@
 import http from "http";
 import amqp from "amqplib";
+import fs from "fs";
 
 const PORT = 5001;
 const request_queue = "request_queue";
 const response_queue = "response_queue";
+const logFile = "log.txt";
 const amqp_url =
   "amqps://mombwlwf:ST-l0O31nJnPfzAyuYc1iVyvV0Ns510y@cow.rmq2.cloudamqp.com/mombwlwf";
+
+const log = (message) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}\n`;
+  fs.appendFileSync(logFile, logMessage);
+  console.log(logMessage);
+};
 
 const createConnection = async () => {
   try {
     const connection = await amqp.connect(amqp_url);
-    console.log("Connected to RabbitMQ");
+    log("Connected to RabbitMQ");
     return connection;
   } catch (error) {
-    console.error("Error connecting to RabbitMQ:", error.message);
+    log("Error connecting to RabbitMQ:", error.message);
     throw error;
   }
 };
@@ -22,10 +31,10 @@ const connection = await createConnection();
 const createChannel = async () => {
   try {
     const channel = await connection.createChannel();
-    console.log("Channel created");
+    log("Channel created");
     return channel;
   } catch (error) {
-    console.error("Error creating channel:", error.message);
+    log("Error creating channel:", error.message);
     throw error;
   }
 };
@@ -51,5 +60,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server M2 started at http://localhost:${PORT}`);
+  log(`Server M2 started at http://localhost:${PORT}`);
 });
