@@ -1,11 +1,11 @@
 import http from "http";
 import amqp from "amqplib";
-import fs from "fs";
+// import fs from "fs";
 
 const PORT = 5000;
 const request_queue = "request_queue"; // Очередь для входящих чисел
 const response_queue = "response_queue"; // Очередь для обработанных чисел
-const logFile = "log.txt";
+// const logFile = "log.txt";
 const amqp_url =
   "amqps://mombwlwf:ST-l0O31nJnPfzAyuYc1iVyvV0Ns510y@cow.rmq2.cloudamqp.com/mombwlwf";
 
@@ -13,7 +13,7 @@ const amqp_url =
 const log = (message) => {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}\n`;
-  fs.appendFileSync(logFile, logMessage);
+  // fs.appendFileSync(logFile, logMessage);
   console.log(logMessage);
 };
 
