@@ -63,7 +63,7 @@ const setupM1Server = async () => {
 
           waitResult(consumerChannel, (result) => {
             res.writeHead(200, { "Content-Type": "text/plain" });
-            res.write(`Request processed. Result: ${result}`);
+            res.write(`${result}`);
             res.end();
           });
         } catch (error) {
