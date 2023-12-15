@@ -39,7 +39,7 @@ const createChannel = async (connection) => {
   }
 };
 
-// Ожидание обработки запроса и передача результата в callback, который выдает ответ на запрос 
+// Ожидание обработки запроса и передача результата в callback, который выдает ответ на запрос
 const waitResult = (channel, callback) => {
   channel.assertQueue(response_queue, { durable: true });
   channel.consume(response_queue, (response) => {
@@ -76,8 +76,10 @@ const start = async () => {
           );
           // Вернуть ответ
           waitResult(consumerChannel, (result) => {
-            res.writeHead(200, { "Content-Type": "text/plain" });
-            res.end(`${result}`);
+            if (!res.finished) {
+              res.writeHead(200, { "Content-Type": "text/plain" });
+              res.end(`${result}`);
+            }
           });
         } catch (error) {
           error(error);
