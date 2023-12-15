@@ -76,10 +76,8 @@ const start = async () => {
           );
           // Вернуть ответ
           waitResult(consumerChannel, (result) => {
-            if (!res.finished) {
               res.writeHead(200, { "Content-Type": "text/plain" });
               res.end(`${result}`);
-            }
           });
         } catch (error) {
           error(error);
